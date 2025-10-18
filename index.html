@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KSSM Form 1 — Mixed Science Quiz (Ch 2,3,4)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f8fafc; }
+    .correct { background-color: rgba(16, 185, 129, 0.15); border-left: 4px solid #10b981; }
+    .wrong { background-color: rgba(239, 68, 68, 0.08); border-left: 4px solid #ef4444; }
+    .answer-reveal { display: none; }
+    .chip { font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 999px; background:#eef2ff; color:#3730a3; }
+  </style>
+</head>
+<body class="min-h-screen p-6">
+  <div class="max-w-4xl mx-auto">
+    <header class="mb-6">
+      <h1 class="text-2xl font-semibold mb-1">KSSM Form 1 — Mixed Quiz (Ch 2, 3, 4)</h1>
+      <p class="text-sm text-gray-600">Answer all questions that follow. Your answers are saved locally — you can leave and return later.</p>
+      <div class="mt-3 flex gap-2">
+        <button id="showMcqBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Show MCQ answer</button>
+        <button id="showSubjBtn" class="px-3 py-1 bg-amber-600 text-white rounded">Show answer for subjective questions</button>
+        <button id="resetBtn" class="px-3 py-1 bg-gray-300 text-gray-800 rounded">Reset Quiz</button>
+      </div>
+    </header>
+
+    <main id="quizContainer" class="space-y-6">
+      <!-- Questions will be injected here -->
+    </main>
+
+    <footer class="mt-8 text-sm text-gray-600">
+      <p>Developed for classroom practice — aligns with KSSM Form 1 topics: Cell structure & function, respiration & photosynthesis, homeostasis, and reproduction.</p>
+    </footer>
+  </div>
+
+  <script>
+    /**********************
+     * Questions dataset
+     * Each item: id, chapter, type ('mcq'|'subjective'), question, options (for MCQ), correct (for MCQ), modelAnswer (for subjective)
+     **********************/
+    const questions = [
+      // --- Chapter 2: Cell as Basic Unit of Life (10: 5 mcq, 5 subj)
+      {id: 'C2-M1', chapter: 2, type: 'mcq', question: 'Which organelle is primarily responsible for energy (ATP) production in a cell?', options: ['Nucleus','Mitochondrion','Ribosome','Chloroplast'], correct: 1},
+      {id: 'C2-M2', chapter: 2, type: 'mcq', question: 'Which structure controls the passage of substances into and out of a cell?', options: ['Cell wall','Cell membrane','Vacuole','Golgi apparatus'], correct: 1},
+      {id: 'C2-M3', chapter: 2, type: 'mcq', question: 'Which cell component is the site of protein synthesis?', options: ['Lysosome','Ribosome','Endoplasmic reticulum','Chloroplast'], correct: 1},
+      {id: 'C2-M4', chapter: 2, type: 'mcq', question: 'Plant cells have which of the following structures that animal cells usually do not?', options: ['Mitochondrion','Cell wall','Nucleus','Ribosome'], correct: 1},
+      {id: 'C2-M5', chapter: 2, type: 'mcq', question: 'Chloroplasts are the site of which process?', options: ['Cellular respiration','Photosynthesis','Protein synthesis','Cell division'], correct: 1},
+
+      {id: 'C2-S1', chapter: 2, type: 'subjective', question: 'Explain the main differences between a plant cell and an animal cell.', modelAnswer: 'Plant cells have a cell wall, large central vacuole, and chloroplasts for photosynthesis; animal cells lack cell wall and chloroplasts and often have smaller, multiple vacuoles. Both have nucleus, mitochondria, ER, Golgi, ribosomes.'},
+      {id: 'C2-S2', chapter: 2, type: 'subjective', question: 'Describe briefly how photosynthesis and cellular respiration are related.', modelAnswer: 'Photosynthesis stores energy by making glucose and oxygen from CO₂ and water; cellular respiration breaks down glucose using oxygen to release energy (ATP), producing CO₂ and water — they form a cycle.'},
+      {id: 'C2-S3', chapter: 2, type: 'subjective', question: 'What is the role of the nucleus in a eukaryotic cell?', modelAnswer: 'The nucleus stores genetic material (DNA) and controls cell activities by regulating gene expression and producing RNA (transcription).'},
+      {id: 'C2-S4', chapter: 2, type: 'subjective', question: 'Name two adaptations of palisade mesophyll cells that help photosynthesis.', modelAnswer: 'Many chloroplasts to capture light; tall/columnar shape increases surface area; arranged in layers for maximum light absorption.'},
+      {id: 'C2-S5', chapter: 2, type: 'subjective', question: 'Why are enzymes important in cellular respiration?', modelAnswer: 'Enzymes lower activation energy and speed up the biochemical reactions in respiration (e.g., glycolysis, Krebs cycle), enabling efficient ATP production.'},
+
+      // --- Chapter 3: Coordination & Response (5: 2 mcq, 3 subj)
+      {id: 'C3-M1', chapter: 3, type: 'mcq', question: 'Homeostasis refers to the maintenance of a stable...', options: ['external environment','internal environment','temperature only','blood only'], correct: 1},
+      {id: 'C3-M2', chapter: 3, type: 'mcq', question: 'Which organ system helps regulate body temperature in humans?', options: ['Digestive','Nervous/Endocrine','Skeletal','Reproductive'], correct: 1},
+
+      {id: 'C3-S1', chapter: 3, type: 'subjective', question: 'Define homeostasis and give one example in humans.', modelAnswer: 'Homeostasis is the maintenance of a stable internal environment despite external changes. Example: regulation of blood glucose levels, body temperature control by sweating/shivering.'},
+      {id: 'C3-S2', chapter: 3, type: 'subjective', question: 'Explain how the body responds when blood glucose is too high (brief).', modelAnswer: 'Pancreas releases insulin; insulin stimulates cells to take up glucose and the liver to store glucose as glycogen, lowering blood glucose.'},
+      {id: 'C3-S3', chapter: 3, type: 'subjective', question: 'What is negative feedback? Give a short example.', modelAnswer: 'Negative feedback is a process that reverses a change to maintain balance. Example: body temperature rises → sweating occurs to cool the body.'},
+
+      // --- Chapter 4: Reproduction (10: 5 mcq, 5 subj)
+      {id: 'C4-M1', chapter: 4, type: 'mcq', question: 'Which of the following is an example of asexual reproduction?', options: ['Fertilisation','Binary fission','Pollination','Internal fertilisation'], correct: 1},
+      {id: 'C4-M2', chapter: 4, type: 'mcq', question: 'Which organ produces sperm in human males?', options: ['Ovary','Testis','Uterus','Prostate gland'], correct: 1},
+      {id: 'C4-M3', chapter: 4, type: 'mcq', question: 'Ovulation is the release of an egg from the...', options: ['ovary','uterus','vagina','fallopian tube'], correct: 0},
+      {id: 'C4-M4', chapter: 4, type: 'mcq', question: 'Which structure in plants develops into a fruit after fertilisation?', options: ['Ovary','Sepal','Petal','Stigma'], correct: 0},
+      {id: 'C4-M5', chapter: 4, type: 'mcq', question: 'Which contraceptive method provides barrier protection?', options: ['Oral pill','Condom','IUD','Implant'], correct: 1},
+
+      {id: 'C4-S1', chapter: 4, type: 'subjective', question: 'Compare sexual and asexual reproduction (one key advantage for each).', modelAnswer: 'Sexual reproduction: produces genetic variation (advantage: adaptability). Asexual reproduction: fast and requires only one parent (advantage: rapid population increase, identical offspring).'},
+      {id: 'C4-S2', chapter: 4, type: 'subjective', question: 'Briefly outline the menstrual cycle stages and how they prepare the uterus for pregnancy.', modelAnswer: 'Phases: menstrual (shedding), follicular (endometrium rebuilds; follicle matures), ovulation (egg released), luteal (endometrium thickens for possible implantation). Hormones (oestrogen, progesterone) regulate these changes.'},
+      {id: 'C4-S3', chapter: 4, type: 'subjective', question: 'What are two factors that can affect foetus development?', modelAnswer: 'Maternal nutrition, maternal infections (e.g., rubella), maternal smoking/alcohol, exposure to drugs/chemicals, genetics and maternal health conditions (e.g., diabetes).'},
+      {id: 'C4-S4', chapter: 4, type: 'subjective', question: 'Explain fertilisation in humans in one or two sentences.', modelAnswer: 'Fertilisation: a sperm fuses with an ovum (egg) in the fallopian tube, forming a zygote that begins cell division and travels to implant in the uterus.'},
+      {id: 'C4-S5', chapter: 4, type: 'subjective', question: 'Name one common cause of infertility in humans and one method of contraception.', modelAnswer: 'Infertility cause: blocked fallopian tubes, low sperm count. Contraception: oral contraceptive pill, condom, IUD.'}
+    ];
+
+    /**********************
+     * Utility functions
+     **********************/
+    function shuffleArray(a) {
+      // Fisher-Yates shuffle
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // Local storage key
+    const STORAGE_KEY = 'kssm_form1_quiz_answers_v1';
+
+    // Retrieve saved answers (map id -> answer)
+    function loadSavedAnswers() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return {};
+        return JSON.parse(raw) || {};
+      } catch (e) {
+        console.warn('Error reading storage', e);
+        return {};
+      }
+    }
+
+    function saveAnswers(map) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    }
+
+    // Save single answer
+    function saveAnswer(id, value) {
+      const map = loadSavedAnswers();
+      map[id] = value;
+      saveAnswers(map);
+    }
+
+    // Clear storage and reload
+    function resetQuiz() {
+      if (!confirm('Reset quiz and clear saved answers?')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+
+    /**********************
+     * Render quiz (all at once)
+     **********************/
+    const quizContainer = document.getElementById('quizContainer');
+    const saved = loadSavedAnswers();
+    const shuffled = shuffleArray([...questions]); // don't mutate original
+
+    function render() {
+      quizContainer.innerHTML = '';
+      shuffled.forEach((q, idx) => {
+        const qi = document.createElement('div');
+        qi.className = 'p-4 bg-white rounded shadow-sm';
+
+        const header = document.createElement('div');
+        header.className = 'flex justify-between items-start gap-2';
+        header.innerHTML = `<div>
+                              <div class="text-sm text-gray-500">Q${idx+1} <span class="ml-2 chip">${q.chapter === 2 ? 'Ch 2' : q.chapter === 3 ? 'Ch 3' : 'Ch 4'}</span></div>
+                              <h3 class="mt-1 font-medium">${q.question}</h3>
+                            </div>
+                            <div class="text-sm text-gray-400">${q.type === 'mcq' ? 'MCQ' : 'Subjective'}</div>`;
+        qi.appendChild(header);
+
+        const body = document.createElement('div');
+        body.className = 'mt-3';
+
+        if (q.type === 'mcq') {
+          const name = `q_${q.id}`;
+          q.options.forEach((opt, i) => {
+            const id = `${name}_opt_${i}`;
+            const label = document.createElement('label');
+            label.className = 'block p-2 rounded hover:bg-gray-50';
+            label.innerHTML = `
+              <input type="radio" name="${name}" id="${id}" value="${i}" class="mr-2" ${saved[q.id] == i ? 'checked' : ''} />
+              <span>${String.fromCharCode(65 + i)}. ${opt}</span>
+            `;
+            // event
+            label.querySelector('input').addEventListener('change', (ev) => {
+              saveAnswer(q.id, Number(ev.target.value));
+            });
+            body.appendChild(label);
+          });
+
+          // placeholder for showing correct/wrong
+          const resultDiv = document.createElement('div');
+          resultDiv.id = `result_${q.id}`;
+          resultDiv.className = 'mt-2 text-sm';
+          body.appendChild(resultDiv);
+
+        } else { // subjective
+          const ta = document.createElement('textarea');
+          ta.className = 'w-full border rounded p-2 h-24';
+          ta.value = saved[q.id] || '';
+          ta.addEventListener('input', (e) => {
+            saveAnswer(q.id, e.target.value);
+          });
+          body.appendChild(ta);
+
+          const reveal = document.createElement('div');
+          reveal.id = `model_${q.id}`;
+          reveal.className = 'answer-reveal mt-2 p-3 rounded bg-gray-50 text-gray-800 text-sm';
+          reveal.innerHTML = `<strong>Model answer:</strong> <div class="mt-1">${escapeHtml(q.modelAnswer)}</div>`;
+          body.appendChild(reveal);
+        }
+
+        qi.appendChild(body);
+        quizContainer.appendChild(qi);
+      });
+    }
+
+    // Escaping helper for safe display
+    function escapeHtml(unsafe) {
+      if (!unsafe && unsafe !== 0) return '';
+      return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // On "Show MCQ answer" press
+    function showMcqAnswers() {
+      const savedMap = loadSavedAnswers();
+      let total = 0, correctCount = 0;
+      shuffled.forEach(q => {
+        if (q.type !== 'mcq') return;
+        total++;
+        const resDiv = document.getElementById(`result_${q.id}`);
+        const user = savedMap[q.id];
+        // highlight choices
+        // find all inputs name q_{id}
+        const name = `q_${q.id}`;
+        const radios = document.getElementsByName(name);
+        radios.forEach(r => {
+          const lab = r.parentElement;
+          lab.classList.remove('correct','wrong');
+          // mark correct
+          if (Number(r.value) === q.correct) {
+            lab.classList.add('correct');
+          }
+          // mark chosen wrong
+          if (r.checked && Number(r.value) !== q.correct) {
+            lab.classList.add('wrong');
+          }
+        });
+
+        if (user !== undefined && user !== null && user !== '') {
+          if (Number(user) === q.correct) {
+            resDiv.innerHTML = `<span class="text-green-700 font-medium">Your answer is correct.</span>`;
+            correctCount++;
+          } else {
+            const correctLetter = String.fromCharCode(65 + q.correct);
+            resDiv.innerHTML = `<span class="text-red-600 font-medium">Wrong. Correct: ${correctLetter}.</span>`;
+          }
+        } else {
+          const correctLetter = String.fromCharCode(65 + q.correct);
+          resDiv.innerHTML = `<span class="text-gray-600">No answer. Correct: ${correctLetter}.</span>`;
+        }
+      });
+      // show simple score
+      if (total > 0) {
+        alert(`MCQ: ${correctCount} out of ${total} correct.`);
+      }
+    }
+
+    // Toggle subjective answers
+    let subjVisible = false;
+    function toggleSubjectiveAnswers() {
+      subjVisible = !subjVisible;
+      shuffled.forEach(q => {
+        if (q.type !== 'subjective') return;
+        const el = document.getElementById(`model_${q.id}`);
+        if (!el) return;
+        el.style.display = subjVisible ? 'block' : 'none';
+      });
+      document.getElementById('showSubjBtn').textContent = subjVisible ? 'Hide answers for subjective questions' : 'Show answer for subjective questions';
+    }
+
+    // Wire buttons
+    document.getElementById('showMcqBtn').addEventListener('click', showMcqAnswers);
+    document.getElementById('showSubjBtn').addEventListener('click', toggleSubjectiveAnswers);
+    document.getElementById('resetBtn').addEventListener('click', resetQuiz);
+
+    // Pre-check saved MCQ inputs and apply classes if show already pressed previously
+    function restoreUI() {
+      const savedMap = loadSavedAnswers();
+      // re-check radios based on saved
+      shuffled.forEach(q => {
+        if (q.type === 'mcq') {
+          const name = `q_${q.id}`;
+          const savedVal = savedMap[q.id];
+          if (savedVal !== undefined) {
+            const radios = document.getElementsByName(name);
+            radios.forEach(r => {
+              if (Number(r.value) === Number(savedVal)) r.checked = true;
+            });
+          }
+        } else {
+          // subjective: nothing else
+        }
+      });
+    }
+
+    // Initial render
+    render();
+    // restore UI from saved
+    restoreUI();
+
+    // Save when page unloads (defensive)
+    window.addEventListener('beforeunload', () => {
+      // already saved on input changes
+    });
+
+  </script>
+</body>
+</html>
